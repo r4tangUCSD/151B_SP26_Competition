@@ -1,10 +1,8 @@
 # run_inference.py
-
 import json
 import re
 from pathlib import Path
 
-import pandas as pd
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
@@ -43,53 +41,67 @@ Run inference on the test dataset.
 '''
 def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH):
 
-    load_dataset()
-    prompt_construction()
-    load_model()
-    generate_predictions()
-    score_responses()
-    summarize_results()
+    # Load the dataset from the input path
+    data = [json.loads(line) for line in open(input_path)]
+
+    # Load the pre-trained model and tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    tokenizer.pad_token = tokenizer.eos_token
+
+    llm = LLM(
+        model=MODEL_ID,
+        quantization="bitsandbytes",
+        load_format="bitsandbytes",
+        enable_prefix_caching=False,
+        gpu_memory_utilization=0.50,
+        max_model_len=16384,
+        trust_remote_code=True,
+        max_num_seqs=256,
+        max_num_batched_tokens=32768,
+    )
+
+    sampling_params = SamplingParams(
+        max_tokens=MAX_TOKENS,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=0.0,
+        repetition_penalty=1.0,
+    )
+
+    print("Model loaded.")
+
+    # Build prompts for each question in the dataset
+    prompts = []
+    for item in data:
+        system, user = build_prompt(item["question"], item.get("options"), variant)
+        prompt_text = tokenizer.apply_chat_template(
+            [{"role": "system", "content": system},
+            {"role": "user",   "content": user}],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+        prompts.append(prompt_text)
+
+    # Generate predictions with VLLM
+    responses = []
+
+    print(f"Generating responses for {len(prompts)} questions")
+
+    outputs = llm.generate(prompts, sampling_params=sampling_params)
+    
+    # Export results to CSV
 
     pass
 
 '''
-Load the test dataset from the specified input path.
+Build the system and user prompts based on the question type
 '''
-def load_dataset():
-    pass
-
-'''
-Construct prompts for the model based on the test dataset.
-'''
-def prompt_construction():
-    pass
-
-'''
-Load the pre-trained model for inference.
-'''
-def load_model():
-    pass
-
-'''
-Generate predictions using the loaded model and constructed prompts.
-'''
-def generate_predictions():
-    pass
-
-'''
-Score the generated responses against the ground truth answers.
-'''
-def score_responses():
-    pass
-
-'''
-Summarize the results of the inference, including metrics and insights.
-'''
-def summarize_results():
-    pass
-
-'''
-Save the results to the specified output path in the required format.
-'''
-def save_results():
-    pass
+def build_prompt(question: str, options: Optional[list]) -> tuple[str, str]:
+    """Return (system_prompt, user_prompt) for a question."""
+    if options:
+        labels    = [chr(65 + i) for i in range(len(options))]
+        opts_text = "\n".join(f"{lbl}. {opt.strip()}" for lbl, opt in zip(labels, options))
+        return SYSTEM_PROMPT_MCQ, f"{question}\n\nOptions:\n{opts_text}"
+    return SYSTEM_PROMPT_MATH, question
