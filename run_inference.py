@@ -95,6 +95,48 @@ def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH
 
     responses = [out.outputs[0].text.strip() for out in outputs]
 
+    def extract_letter(text: str) -> str:
+    m = re.search(r"\\boxed\{([A-Za-z])\}", text)
+    if m:
+        return m.group(1).upper()
+    matches = re.findall(r"\b([A-Z])\b", text.upper())
+    return matches[-1] if matches else ""
+
+    
+    def score_mcq(response: str, gold_letter: str) -> bool:
+        return extract_letter(response) == gold_letter.strip().upper()
+
+
+    # Load Judger for free-form scoring
+    sys.path.insert(0, ".")
+    from judger import Judger
+    judger = Judger(strict_extract=False)
+    
+    results = []
+    for item, response in tqdm(zip(data, responses), total=len(data), desc="Scoring"):
+        is_mcq = bool(item.get("options"))
+        gold   = item["answer"]
+    
+        if is_mcq:
+            correct = score_mcq(response, str(gold))
+        else:
+            gold_list = gold if isinstance(gold, list) else [gold]
+            try:
+                correct = judger.auto_judge(
+                    pred=response,
+                    gold=gold_list,
+                    options=[[]] * len(gold_list),
+                )
+            except Exception:
+                correct = False
+    
+        results.append({
+            "id":       item.get("id"),
+            "is_mcq":   is_mcq,
+            "gold":     gold,
+            "response": response,
+            "correct":  correct,
+        })
 
     # Export results to CSV
     SAVE_EVAL = False  
