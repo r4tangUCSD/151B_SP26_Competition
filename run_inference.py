@@ -8,7 +8,7 @@ from typing import Optional
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
-MODEL_ID = "Qwen/your-base-model-or-final-model"
+MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
 
 MAX_TOKENS = 32768
 
