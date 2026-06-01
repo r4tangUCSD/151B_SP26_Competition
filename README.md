@@ -8,7 +8,7 @@ Linus Lee
 ## GPU & Inference Time
 
 - **GPU**: NVIDIA A100 (80GB) via Google Colab Pro
-- **Approximate inference time**: ~2 hours for 943 questions 
+- **Approximate inference time**: ~3 hours for 943 questions 
 
 ```python
 MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507" for baseline
