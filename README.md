@@ -5,30 +5,10 @@ Dylan Craver
 Michael Luo
 Linus Lee
 
-Open **`starter_code_cse151b_comp.ipynb`** to get started.
-
-The notebook covers environment setup, inference with Qwen3-4B-Thinking (INT8), and scoring against the public dataset.
-
-## Contents
-
-| File | Description |
-|---|---|
-| `starter_code_cse151b_comp.ipynb` | Main entry point |
-| `judger.py` | Response scoring logic |
-| `utils.py` | Utilities used by `judger.py` |
-| `data/public.jsonl` | Public dataset with ground-truth answers |
-| `results/` | Output JSONL files written at runtime |
-
 ## GPU & Inference Time
 
 - **GPU**: NVIDIA A100 (80GB) via Google Colab Pro
-- **Approximate inference time**: ~2 hours for 1,126 questions 
-
-## Model Weights
-
-No local download required. The model is hosted on HuggingFace and loaded automatically.
-
-Update `MODEL_ID` in `run_inference.py` to point to your model:
+- **Approximate inference time**: ~2 hours for 943 questions 
 
 ```python
 MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507" for baseline
@@ -45,3 +25,7 @@ Or call directly:
 from run_inference import run_inference
 run_inference(input_path="data/private_test.json", output_path="outputs/submission.csv")
 ```
+
+run_inference() takes in three arguments: an input path, and output path, and an optional N = number of examples. When N = None, it runs on the full dataset.
+
+In run_inference.ipynb is the Jupyter notebook used to produce the final submission on Kaggle. Since it was ran in Colab, it mounts to Google Drive and uses Drive path names. To run it elsewhere, you may need to change cells with imports and file paths.
