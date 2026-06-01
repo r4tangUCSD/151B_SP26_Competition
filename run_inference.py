@@ -92,7 +92,10 @@ def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH
     print(f"Generating responses for {len(prompts)} questions")
 
     outputs = llm.generate(prompts, sampling_params=sampling_params)
-    
+
+    responses = [out.outputs[0].text.strip() for out in outputs]
+
+
     # Export results to CSV
     SAVE_EVAL = False  
     OUTPUT_PATH = "results/starter_results.csv"
