@@ -1,6 +1,8 @@
 # run_inference.py
 import json
 import re
+import csv
+
 from pathlib import Path
 
 from transformers import AutoTokenizer
@@ -92,8 +94,34 @@ def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH
     outputs = llm.generate(prompts, sampling_params=sampling_params)
     
     # Export results to CSV
-
-    pass
+    SAVE_EVAL = False  
+    OUTPUT_PATH = "results/starter_results.csv"
+    out_path = Path(OUTPUT_PATH)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(out_path, "w", newline="", encoding="utf-8") as f:
+        
+        if SAVE_EVAL:
+            fieldnames = ["id", "is_mcq", "gold", "response", "correct"]
+        else:
+            fieldnames = ["id", "response"]
+            
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        
+        #Write the header row at the top of the CSV
+        writer.writeheader()
+        
+        #Write the data rows
+        for r in results:
+            if SAVE_EVAL:
+                record = {"id": r["id"], "is_mcq": r["is_mcq"], "gold": r["gold"],
+                          "response": r["response"], "correct": r["correct"]}
+            else:
+                record = {"id": r["id"], "response": r["response"]}
+                
+            writer.writerow(record)
+    
+    print(f"Saved {len(results)} records to {out_path}")
 
 '''
 Build the system and user prompts based on the question type
@@ -105,3 +133,5 @@ def build_prompt(question: str, options: Optional[list]) -> tuple[str, str]:
         opts_text = "\n".join(f"{lbl}. {opt.strip()}" for lbl, opt in zip(labels, options))
         return SYSTEM_PROMPT_MCQ, f"{question}\n\nOptions:\n{opts_text}"
     return SYSTEM_PROMPT_MATH, question
+
+
