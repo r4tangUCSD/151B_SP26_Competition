@@ -4,12 +4,11 @@ import re
 import csv
 
 from pathlib import Path
-
+from typing import Optional
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
 MODEL_ID = "Qwen/your-base-model-or-final-model"
-PROMPT_VARIANT = "multiple_answers"
 
 MAX_TOKENS = 32768
 
