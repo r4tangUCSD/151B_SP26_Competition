@@ -4,18 +4,17 @@ import re
 import csv
 
 from pathlib import Path
-
+from typing import Optional
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
-MODEL_ID = "Qwen/your-base-model-or-final-model"
+MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
 PROMPT_VARIANT = "multiple_answers"
 
 MAX_TOKENS = 2048
 TEMPERATURE = 0.0
 TOP_P = 1.0
 GPU_MEMORY_UTILIZATION = 0.90
-MAX_MODEL_LEN = 4096
 
 DEFAULT_INPUT_PATH = "data/private_test.json"
 DEFAULT_OUTPUT_PATH = "outputs/submission.csv"
