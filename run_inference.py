@@ -4,17 +4,14 @@ import re
 import csv
 
 from pathlib import Path
-from typing import Optional
+
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
-MODEL_ID = "Qwen/Qwen3-4B-Thinking-2507"
+MODEL_ID = "Qwen/your-base-model-or-final-model"
 PROMPT_VARIANT = "multiple_answers"
 
-MAX_TOKENS = 2048
-TEMPERATURE = 0.0
-TOP_P = 1.0
-GPU_MEMORY_UTILIZATION = 0.90
+MAX_TOKENS = 32768
 
 DEFAULT_INPUT_PATH = "data/private_test.json"
 DEFAULT_OUTPUT_PATH = "outputs/submission.csv"
@@ -40,10 +37,27 @@ SYSTEM_PROMPT_MCQ = (
 '''
 Run inference on the test dataset.
 '''
-def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH):
+def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH, N=None):
+    """
+    Run inference on the test dataset.
+
+    Args:
+        input_path: Path to the JSONL test file.
+        output_path: Path where the submission CSV should be written.
+        N: Optional number of examples to run for debugging. If None, run the full dataset.
+    """
 
     # Load the dataset from the input path
-    data = [json.loads(line) for line in open(input_path)]
+    with open(input_path, "r", encoding="utf-8") as f:
+        data = [json.loads(line) for line in f]
+
+    if N is not None:
+        if N <= 0:
+            raise ValueError("N must be a positive integer or None.")
+        data = data[:N]
+        print(f"Debug mode: running first {len(data)} examples.")
+    else:
+        print(f"Full mode: running all {len(data)} examples.")
 
     # Load the pre-trained model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
@@ -76,7 +90,7 @@ def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH
     # Build prompts for each question in the dataset
     prompts = []
     for item in data:
-        system, user = build_prompt(item["question"], item.get("options"), variant)
+        system, user = build_prompt(item["question"], item.get("options"))
         prompt_text = tokenizer.apply_chat_template(
             [{"role": "system", "content": system},
             {"role": "user",   "content": user}],
@@ -95,6 +109,9 @@ def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH
     responses = [out.outputs[0].text.strip() for out in outputs]
 
     # Export results to CSV
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         fieldnames = ["id", "response"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -109,6 +126,7 @@ def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH
             writer.writerow(record)
 
     print(f"Saved {len(responses)} records to {output_path}")
+    return output_path
 
 '''
 Build the system and user prompts based on the question type
