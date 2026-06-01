@@ -96,7 +96,6 @@ def run_inference(input_path=DEFAULT_INPUT_PATH, output_path=DEFAULT_OUTPUT_PATH
     responses = [out.outputs[0].text.strip() for out in outputs]
 
     # Export results to CSV
-
     with open(output_path, "w", newline="", encoding="utf-8") as f:
         fieldnames = ["id", "response"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
