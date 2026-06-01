@@ -1,8 +1,8 @@
 # CSE 151B Competition — Starter Code
 
-Ryan Tang
-Dylan Craver
-Michael Luo
+Ryan Tang,
+Dylan Craver,
+Michael Luo,
 Linus Lee
 
 ## GPU & Inference Time
